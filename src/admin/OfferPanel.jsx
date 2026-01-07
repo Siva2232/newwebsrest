@@ -1,25 +1,59 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Trash2, Plus, Image as ImageIcon, Save, CheckCircle, RefreshCcw, LayoutGrid, Sparkles, Upload } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { Trash2, Plus, Upload, Save, CheckCircle, RefreshCcw, LayoutGrid, Sparkles } from "lucide-react";
 
 export default function PromoPanel() {
   const STORAGE_KEY = "promoDeals";
 
   const defaultPromoData = [
-    { id: 101, title: "Art of Dining", description: "Discover Flavors Beyond Boundaries", imageUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1600&q=80", tag: "Seasonal Menu" },
-    { id: 102, title: "Purely Organic", description: "Farm to Fork, Every Single Day", imageUrl: "https://images.pexels.com/photos/1640774/pexels-photo-1640774.jpeg?auto=compress&cs=tinysrgb&w=1600", tag: "Freshly Picked" },
-    { id: 103, title: "Chef's Special", description: "Handcrafted Culinary Masterpieces", imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1600&q=80", tag: "Must Try" },
-    { id: 104, title: "Midnight Feast", description: "The best flavors for the night owl", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=80", tag: "Late Night" },
-    { id: 105, title: "Dessert Heaven", description: "Sweet endings to beautiful stories", imageUrl: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1600&q=80", tag: "Sweet Treats" }
+    { 
+      id: 101, 
+      title: "Art of Dining", 
+      description: "Discover Flavors Beyond Boundaries", 
+      imageUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1600&q=80", 
+      tag: "Seasonal Menu",
+      isPublished: true 
+    },
+    { 
+      id: 102, 
+      title: "Purely Organic", 
+      description: "Farm to Fork, Every Single Day", 
+      imageUrl: "https://images.pexels.com/photos/1640774/pexels-photo-1640774.jpeg?auto=compress&cs=tinysrgb&w=1600", 
+      tag: "Freshly Picked",
+      isPublished: true 
+    },
+    { 
+      id: 103, 
+      title: "Chef's Special", 
+      description: "Handcrafted Culinary Masterpieces", 
+      imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1600&q=80", 
+      tag: "Must Try",
+      isPublished: true 
+    },
+    { 
+      id: 104, 
+      title: "Midnight Feast", 
+      description: "The best flavors for the night owl", 
+      imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=80", 
+      tag: "Late Night",
+      isPublished: true 
+    },
+    { 
+      id: 105, 
+      title: "Dessert Heaven", 
+      description: "Sweet endings to beautiful stories", 
+      imageUrl: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1600&q=80", 
+      tag: "Sweet Treats",
+      isPublished: true 
+    }
   ];
 
   const [promos, setPromos] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Strip any old isActive properties for cleanliness
-      return parsed.map(p => {
+      return parsed.map((p) => {
         const { isActive, ...rest } = p;
-        return rest;
+        return { ...rest, isPublished: rest.isPublished ?? true };
       });
     }
     return defaultPromoData;
@@ -59,7 +93,13 @@ export default function PromoPanel() {
   return (
     <div className="min-h-screen bg-white p-6 md:p-12 pb-40 font-sans text-black">
       <div className="max-w-6xl mx-auto">
-        <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileUpload} 
+          accept="image/*" 
+          className="hidden" 
+        />
 
         {/* --- HEADER --- */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-8">
@@ -72,13 +112,19 @@ export default function PromoPanel() {
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.4em] mt-2 italic">Creative Studio</p>
             </div>
           </div>
-
           <div className="flex gap-3">
             <button onClick={handleReset} className="p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl transition-all">
               <RefreshCcw size={20} className="text-gray-400" />
             </button>
-            <button 
-              onClick={() => setPromos([...promos, { id: Date.now(), title: "", description: "", imageUrl: "", tag: "NEW" }])} 
+            <button
+              onClick={() => setPromos([...promos, { 
+                id: Date.now(), 
+                title: "", 
+                description: "", 
+                imageUrl: "", 
+                tag: "NEW",
+                isPublished: true 
+              }])}
               className="px-8 py-4 bg-black text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl flex items-center gap-3"
             >
               <Plus size={18} strokeWidth={3} /> Add Card
@@ -86,63 +132,100 @@ export default function PromoPanel() {
           </div>
         </header>
 
-        {/* --- GRID (White Background Cards) --- */}
+        {/* --- GRID --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {promos.map((promo) => (
-            <div key={promo.id} className="group relative bg-white border-2 border-gray-100 rounded-[2.5rem] p-5 transition-all hover:border-black shadow-sm hover:shadow-2xl">
-              
+            <div 
+              key={promo.id} 
+              className="group relative bg-white border-2 border-gray-100 rounded-[2.5rem] p-6 transition-all hover:border-black shadow-sm hover:shadow-2xl"
+            >
+              {/* Draft Badge - only shows when not published */}
+              {!promo.isPublished && (
+                <div className="absolute top-6 right-6 z-10">
+                  <div className="bg-orange-100 text-orange-700 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-md border border-orange-200">
+                    Draft
+                  </div>
+                </div>
+              )}
+
               {/* IMAGE AREA */}
-              <div 
-                onClick={() => { setActiveId(promo.id); fileInputRef.current.click(); }}
-                className="relative aspect-[4/3] bg-gray-50 rounded-[1.8rem] overflow-hidden mb-6 border border-gray-100 cursor-pointer"
+              <div
+                onClick={() => { 
+                  setActiveId(promo.id); 
+                  fileInputRef.current?.click(); 
+                }}
+                className="relative aspect-[4/3] bg-gray-50 rounded-[1.8rem] overflow-hidden mb-6 border border-dashed border-gray-200 cursor-pointer hover:border-gray-300 transition-all"
               >
                 {promo.imageUrl ? (
-                  <img src={promo.imageUrl} alt={promo.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <img 
+                    src={promo.imageUrl} 
+                    alt={promo.title} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                  />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-300">
-                    <Upload size={24} className="mb-2" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Media Upload</span>
+                    <Upload size={32} className="mb-3" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Upload Image</span>
                   </div>
                 )}
               </div>
 
-              {/* TEXT INPUTS (Pure White & Black) */}
-              <div className="px-1 pb-4 space-y-4">
+              {/* TEXT INPUTS */}
+              <div className="space-y-5">
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Title</label>
-                  <input 
+                  <input
                     placeholder="Enter heading..."
-                    value={promo.title} 
+                    value={promo.title}
                     onChange={(e) => setPromos(promos.map(p => p.id === promo.id ? {...p, title: e.target.value} : p))}
-                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-black focus:border-black outline-none transition-all placeholder:text-gray-200" 
+                    className="w-full bg-transparent border-2 border-gray-100 rounded-xl px-5 py-4 text-lg font-black text-black focus:border-black outline-none transition-all placeholder:text-gray-300"
                   />
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Caption</label>
-                  <textarea 
+                  <textarea
                     placeholder="Describe this offer..."
-                    value={promo.description} 
+                    value={promo.description}
                     onChange={(e) => setPromos(promos.map(p => p.id === promo.id ? {...p, description: e.target.value} : p))}
-                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-xs text-gray-600 font-medium h-24 resize-none focus:border-black outline-none transition-all placeholder:text-gray-200"
+                    className="w-full bg-transparent border-2 border-gray-100 rounded-xl px-5 py-4 text-sm text-gray-700 font-medium h-28 resize-none focus:border-black outline-none transition-all placeholder:text-gray-300"
                   />
                 </div>
 
-                <div className="flex justify-between items-center pt-2">
-                  <div className="flex items-center gap-2">
-                    <Sparkles size={12} className="text-gray-400" />
-                    <input 
-                      value={promo.tag || ""}
-                      onChange={(e) => setPromos(promos.map(p => p.id === promo.id ? {...p, tag: e.target.value} : p))}
-                      className="text-[10px] font-black uppercase text-black bg-transparent border-none outline-none w-24"
-                      placeholder="TAG"
-                    />
+                <div className="flex justify-between items-center pt-3">
+                  <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-3">
+                      <Sparkles size={14} className="text-gray-400" />
+                      <input
+                        value={promo.tag || ""}
+                        onChange={(e) => setPromos(promos.map(p => p.id === promo.id ? {...p, tag: e.target.value} : p))}
+                        className="text-[11px] font-black uppercase text-black bg-transparent border-none outline-none min-w-32"
+                        placeholder="ADD TAG"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPromos(promos.map(p => p.id === promo.id ? { ...p, isPublished: !p.isPublished } : p))}
+                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${promo.isPublished ? 'bg-black' : 'bg-gray-300'}`}
+                      >
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${promo.isPublished ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                      <span className={`text-[11px] font-black uppercase tracking-widest ${promo.isPublished ? 'text-black' : 'text-gray-500'}`}>
+                        {promo.isPublished ? 'Live' : 'Draft'}
+                      </span>
+                    </div>
                   </div>
-                  <button 
-                    onClick={() => setPromos(promos.filter(p => p.id !== promo.id))} 
-                    className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm("Delete this card?")) {
+                        setPromos(promos.filter(p => p.id !== promo.id));
+                      }
+                    }}
+                    className="p-3 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
@@ -150,15 +233,15 @@ export default function PromoPanel() {
           ))}
         </div>
 
-        {/* --- STICKY FOOTER (Glass Light Mode) --- */}
+        {/* --- STICKY FOOTER --- */}
         <div className="fixed bottom-10 inset-x-0 flex justify-center px-6 z-50 pointer-events-none">
-          <div className="bg-white/80 backdrop-blur-xl border border-gray-200 p-2 rounded-[2.5rem] shadow-2xl pointer-events-auto">
-            <button 
+          <div className="bg-white/90 backdrop-blur-xl border border-gray-200 p-3 rounded-[3rem] shadow-2xl pointer-events-auto">
+            <button
               onClick={saveToLocal}
-              className={`px-14 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.3em] flex items-center gap-4 transition-all ${showSuccess ? "bg-emerald-500 text-white" : "bg-black text-white hover:bg-gray-800"}`}
+              className={`px-16 py-6 rounded-[2.5rem] font-black uppercase text-sm tracking-[0.3em] flex items-center gap-5 transition-all ${showSuccess ? "bg-emerald-600 text-white shadow-lg" : "bg-black text-white hover:bg-gray-800"}`}
             >
-              {showSuccess ? <CheckCircle size={20} /> : <Save size={20} />}
-              {showSuccess ? "Published Successfully" : "Deploy To Live Website"}
+              {showSuccess ? <CheckCircle size={24} /> : <Save size={24} />}
+              {showSuccess ? "Deployed Successfully" : "Deploy to Live"}
             </button>
           </div>
         </div>
