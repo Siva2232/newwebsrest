@@ -172,8 +172,6 @@
 //   );
 // }
 
-
-
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
@@ -190,19 +188,13 @@ function FoodTypeIcon({ type }) {
 export default function ProductCard({ product, onAdd, onRemove, initialQty = 0 }) {
   const { name, description, price, image, available = true, type = "veg" } = product;
 
-  // LOGIC PRESERVED
   const [quantity, setQuantity] = useState(initialQty);
-  const [showCheck, setShowCheck] = useState(false);
 
   const handleIncrement = (e) => {
     e.stopPropagation();
     if (!available) return;
     setQuantity(prev => prev + 1);
     onAdd(product);
-    if (quantity === 0) {
-      setShowCheck(true);
-      setTimeout(() => setShowCheck(false), 800);
-    }
   };
 
   const handleDecrement = (e) => {
@@ -214,91 +206,82 @@ export default function ProductCard({ product, onAdd, onRemove, initialQty = 0 }
   };
 
   return (
-    <motion.div
-      className="group relative flex flex-col h-full bg-white border border-gray-100 rounded-[2rem] overflow-hidden hover:shadow-xl hover:border-black transition-all duration-500"
-      animate={available ? {} : { x: [0, -5, 5, -5, 5, 0] }}
-    >
+    <div className="group relative flex flex-col bg-white border border-gray-100 rounded-[2rem] overflow-hidden hover:shadow-2xl hover:border-black transition-all duration-500 h-full">
       {/* --- IMAGE SECTION --- */}
-      <div className="relative aspect-square overflow-hidden shrink-0">
+      <div className="relative aspect-square overflow-hidden shrink-0 bg-gray-50">
         <img
           src={image || "https://via.placeholder.com/600x600"}
           alt={name}
-          className={`w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 ${!available ? "grayscale brightness-90" : ""}`}
+          className={`w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${!available ? "grayscale brightness-95" : ""}`}
         />
-        
         <div className="absolute top-4 left-4 z-10 bg-white p-1.5 rounded-xl shadow-sm">
           <FoodTypeIcon type={type} />
         </div>
-
         {!available && (
-          <div className="absolute inset-0 z-20 bg-white/60 flex items-center justify-center">
-            <div className="bg-black text-white px-5 py-2 font-black text-[10px] uppercase tracking-widest shadow-2xl">
+          <div className="absolute inset-0 z-20 bg-white/40 flex items-center justify-center backdrop-blur-[2px]">
+            <div className="bg-black text-white px-5 py-2 font-black text-[10px] uppercase tracking-widest">
               Sold Out
             </div>
           </div>
         )}
       </div>
 
-      {/* --- CONTENT & ACTION AREA --- */}
-      <div className="flex flex-col flex-grow p-4 md:p-6 bg-white">
+      {/* --- CONTENT AREA --- */}
+      <div className="flex flex-col flex-grow p-5 md:p-6 bg-white">
         
-        {/* Info Area - Fixed alignment issues */}
-        <div className="flex flex-col flex-grow">
-          <div className="flex justify-between items-start gap-2">
-            <h3 className="text-black text-sm md:text-lg font-black leading-tight uppercase tracking-tight line-clamp-2 min-h-[2.5rem] md:min-h-[3rem]">
-              {name}
-            </h3>
-            <span className="text-black text-base md:text-xl font-black tracking-tighter shrink-0">
-              ₹{price}
-            </span>
-          </div>
-          
-          {description && (
-            <p className="text-gray-600 text-[10px] md:text-[11px] mt-2 line-clamp-2 leading-snug font-medium min-h-[2rem]">
-              {description}
-            </p>
-          )}
+        {/* HEADING & PRICE: Fully Responsive, No Cutoff */}
+        <div className="flex justify-between items-start gap-3 w-full mb-3">
+          <h3 className="text-[14px] md:text-lg font-black leading-tight uppercase tracking-tight text-black break-words flex-1">
+            {name}
+          </h3>
+          <span className="text-black text-base md:text-xl font-black tracking-tighter shrink-0">
+            ₹{price}
+          </span>
         </div>
 
-        {/* --- BUTTONS: LOCKED TO BOTTOM --- */}
-        <div className="mt-4 pt-4 border-t border-gray-100">
+        {/* DESCRIPTION: Static and fully visible */}
+        {description && (
+          <p className="text-gray-500 text-[11px] md:text-[13px] leading-relaxed font-medium mb-6">
+            {description}
+          </p>
+        )}
+
+        {/* --- BUTTONS SECTION --- */}
+        <div className="mt-auto pt-4 border-t border-gray-100">
           {available ? (
-            <div className="h-10 md:h-12 w-full">
+            <div className="h-11 md:h-12 w-full">
               <AnimatePresence mode="wait">
                 {quantity === 0 ? (
                   <motion.button
                     key="add-btn"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     onClick={handleIncrement}
                     className="w-full h-full bg-black text-white font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-zinc-800"
                   >
-                    <Plus size={14} strokeWidth={3} />
-                    Add
+                    <Plus size={14} strokeWidth={4} /> Add
                   </motion.button>
                 ) : (
                   <motion.div
                     key="qty-selector"
-                    initial={{ scale: 0.9, opacity: 0 }}
+                    initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
                     className="w-full h-full grid grid-cols-3 border-2 border-black overflow-hidden"
                   >
-                    <button
-                      onClick={handleDecrement}
-                      className="flex items-center justify-center text-black hover:bg-gray-50 transition-colors border-r-2 border-black"
+                    <button 
+                      onClick={handleDecrement} 
+                      className="flex items-center justify-center border-r-2 border-black hover:bg-gray-50 transition-colors"
                     >
                       <Minus size={16} strokeWidth={3} />
                     </button>
-                    
-                    <div className="flex items-center justify-center bg-white font-black text-xs md:text-sm">
+                    <div className="flex items-center justify-center font-black text-xs md:text-sm">
                       {quantity}
                     </div>
-
-                    <button
-                      onClick={handleIncrement}
-                      className="flex items-center justify-center text-black hover:bg-gray-50 transition-colors border-l-2 border-black"
+                    <button 
+                      onClick={handleIncrement} 
+                      className="flex items-center justify-center border-l-2 border-black hover:bg-gray-50 transition-colors"
                     >
                       <Plus size={16} strokeWidth={3} />
                     </button>
@@ -307,12 +290,12 @@ export default function ProductCard({ product, onAdd, onRemove, initialQty = 0 }
               </AnimatePresence>
             </div>
           ) : (
-            <div className="h-10 md:h-12 w-full bg-gray-50 flex items-center justify-center text-gray-300 font-black text-[9px] uppercase tracking-widest">
-              Unavailable
+            <div className="h-11 md:h-12 w-full bg-gray-50 flex items-center justify-center text-gray-300 font-black text-[9px] uppercase tracking-widest">
+              Out of Stock
             </div>
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
