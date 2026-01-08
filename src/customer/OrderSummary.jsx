@@ -4,7 +4,7 @@ import StatusBadge from "../components/StatusBadge";
 import OrderProgress from "../components/OrderProgress";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { 
   ChevronLeft, 
@@ -19,13 +19,19 @@ import {
 export default function OrderSummary() {
   const { orders } = useOrders();
   const navigate = useNavigate();
+  
+  // Reference for the Cheering Sound
+  const cheerSoundRef = useRef(new Audio("https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3"));
 
-  // Primary: Find by ID, Secondary: Most recent order
   const lastOrderId = localStorage.getItem("lastOrderId");
   const order = orders.find((o) => o.id === lastOrderId) || orders[orders.length - 1];
 
   useEffect(() => {
     if (order?.status === "Served") {
+      // 1. Play Clapping/Cheering Sound
+      cheerSoundRef.current.play().catch(err => console.log("Interaction needed for sound"));
+
+      // 2. Confetti Explosion
       const duration = 3 * 1000;
       const end = Date.now() + duration;
 
@@ -73,10 +79,16 @@ export default function OrderSummary() {
     );
   }
 
-  const totalAmount = order.items?.reduce((sum, i) => sum + (i.price * i.qty), 0) || 0;
+  const subtotal = order.items?.reduce((sum, i) => sum + (i.price * i.qty), 0) || 0;
+  const cgst = order.billDetails?.cgst || subtotal * 0.025;
+  const sgst = order.billDetails?.sgst || subtotal * 0.025;
+  const grandTotal = order.billDetails?.grandTotal || (subtotal + cgst + sgst);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div 
+      className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans"
+      onClick={() => cheerSoundRef.current.load()} // Unlocks audio on first user tap
+    >
       {/* --- PREMIUM GLASS NAVBAR --- */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
@@ -163,26 +175,39 @@ export default function OrderSummary() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-slate-900 truncate">{item.name}</p>
                     <p className="text-[10px] font-black text-indigo-500 mt-0.5 uppercase tracking-wider">
-                      {item.qty} × ₹{item.price.toFixed(2)}
+                      {item.qty} × ₹{item.price.toLocaleString()}
                     </p>
                   </div>
                   <p className="text-sm font-black text-slate-900 font-mono">
-                    ₹{(item.price * item.qty).toFixed(2)}
+                    ₹{(item.price * item.qty).toLocaleString()}
                   </p>
                 </motion.div>
               ))}
             </div>
           </div>
 
-          {/* Bill Summary */}
-          <div className="p-8 bg-slate-50/50 border-t border-slate-100">
-            <div className="flex justify-between items-center">
+          {/* Detailed Bill Summary */}
+          <div className="p-8 bg-slate-50/50 border-t border-slate-100 space-y-3">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <span>Subtotal</span>
+              <span className="text-slate-600 font-mono">₹{subtotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <span>CGST (2.5%)</span>
+              <span className="text-slate-600 font-mono">₹{cgst.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <span>SGST (2.5%)</span>
+              <span className="text-slate-600 font-mono">₹{sgst.toLocaleString()}</span>
+            </div>
+            
+            <div className="pt-4 mt-2 border-t border-slate-200/60 flex justify-between items-center">
               <div className="space-y-0.5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Payable</p>
-                <p className="text-xs font-bold text-slate-500">Incl. all taxes & charges</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-900">Grand Total</p>
+                <p className="text-[9px] font-bold text-indigo-500 uppercase">Paid via Counter</p>
               </div>
               <span className="text-3xl font-black text-slate-900 font-mono tracking-tighter">
-                ₹{totalAmount.toFixed(2)}
+                ₹{grandTotal.toLocaleString()}
               </span>
             </div>
           </div>

@@ -23,8 +23,11 @@ export default function OrdersDashboard() {
   const activeOrders = orders.filter((o) => o.status !== "Served").sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
   const servedOrders = orders.filter((o) => o.status === "Served").sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
   
+  // Updated to include GST in Revenue stats if available
   const totalRevenue = orders.reduce((acc, order) => {
-    return acc + order.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const tax = order.billDetails?.cgst ? (order.billDetails.cgst + order.billDetails.sgst) : (subtotal * 0.05);
+    return acc + subtotal + tax;
   }, 0);
 
   const totalItemsSold = orders.reduce((acc, order) => {
@@ -33,7 +36,7 @@ export default function OrdersDashboard() {
 
   // 6 STATS DATA
   const stats = [
-    { label: "Revenue", value: `₹${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Total Revenue", value: `₹${Math.round(totalRevenue).toLocaleString()}`, icon: DollarSign, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "Live Tables", value: new Set(activeOrders.map(o => o.table)).size, icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
     { label: "Ready", value: orders.filter(o => o.status === "Ready").length, icon: BellRing, color: "text-indigo-600", bg: "bg-indigo-50" },
     { label: "Total Served", value: servedOrders.length, icon: PackageCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
@@ -88,7 +91,7 @@ export default function OrdersDashboard() {
           )}
         </section>
 
-        {/* 2. HISTORY SECTION (Restored) */}
+        {/* 2. HISTORY SECTION */}
         {servedOrders.length > 0 && (
           <section className="space-y-8 pt-10 border-t border-slate-100">
             <div className="flex items-center justify-center gap-4">
@@ -111,7 +114,13 @@ export default function OrdersDashboard() {
 
 function PremiumOrderCard({ order, updateOrderStatus, isCompleted }) {
   const [timeAgo, setTimeAgo] = useState("");
-  const total = order.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+  
+  // Billing Logic
+  const subtotal = order.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+  const cgst = order.billDetails?.cgst || (subtotal * 0.025);
+  const sgst = order.billDetails?.sgst || (subtotal * 0.025);
+  const grandTotal = order.billDetails?.grandTotal || (subtotal + cgst + sgst);
+
   const status = order.status;
   const currentStep = statusStep[status] || 1;
   const gradient = gradientMap[status] || "from-slate-400 to-slate-600";
@@ -128,7 +137,6 @@ function PremiumOrderCard({ order, updateOrderStatus, isCompleted }) {
 
   return (
     <div className={`relative overflow-hidden rounded-[2.5rem] bg-white border border-slate-100 shadow-sm transition-all ${isCompleted ? 'scale-[0.98]' : ''}`}>
-      {/* Top progress bar only for active items */}
       {!isCompleted && (
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-50">
           <div 
@@ -159,15 +167,41 @@ function PremiumOrderCard({ order, updateOrderStatus, isCompleted }) {
                   <span className="h-7 w-7 bg-slate-900 text-white rounded-lg flex items-center justify-center text-[10px] font-black italic">{item.qty}</span>
                   <span className="font-bold text-slate-700">{item.name}</span>
                 </div>
-                <span className="text-slate-400 font-bold italic text-sm">₹{item.price * item.qty}</span>
+                <span className="text-slate-400 font-bold italic text-sm">₹{(item.price * item.qty).toLocaleString()}</span>
               </div>
             ))}
           </div>
+
+          {/* ADDED KITCHEN NOTES DISPLAY */}
+          {order.notes && (
+            <div className="bg-orange-50 border border-orange-100 p-4 rounded-2xl flex gap-3 items-start">
+              <MessageSquare size={16} className="text-orange-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[9px] font-black text-orange-500 uppercase tracking-wider mb-1">Kitchen Request</p>
+                <p className="text-sm font-bold text-slate-700 leading-tight italic">"{order.notes}"</p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Hide status control for completed items, or keep it for corrections */}
+        {/* BILL BREAKDOWN FOR DASHBOARD */}
+        <div className="w-full md:w-48 flex flex-col justify-center border-l border-slate-50 md:pl-8 space-y-2">
+           <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase">
+             <span>Items</span>
+             <span>₹{subtotal.toLocaleString()}</span>
+           </div>
+           <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase">
+             <span>GST</span>
+             <span>₹{(cgst + sgst).toLocaleString()}</span>
+           </div>
+           <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+             <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">Total Bill</span>
+             <span className="text-lg font-black text-slate-900 italic">₹{Math.round(grandTotal).toLocaleString()}</span>
+           </div>
+        </div>
+
         {!isCompleted && (
-          <div className="w-full md:w-64 bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+          <div className="w-full md:w-56 bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center italic">Move Status</p>
             <div className="flex flex-col gap-2">
               {["Preparing", "Cooking", "Ready", "Served"].map((s) => (
@@ -184,7 +218,7 @@ function PremiumOrderCard({ order, updateOrderStatus, isCompleted }) {
         )}
 
         {isCompleted && (
-          <div className="flex flex-col justify-center items-center px-8 border-l border-slate-50 text-emerald-500">
+          <div className="flex flex-col justify-center items-center px-8 text-emerald-500">
              <CheckCircle size={32} />
              <span className="text-[10px] font-black uppercase mt-2">Served</span>
           </div>
