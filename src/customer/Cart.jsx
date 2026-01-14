@@ -6,7 +6,8 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { 
   ShoppingBag, Trash2, Plus, Minus, ChevronLeft, 
-  CheckCircle2, ReceiptText, ArrowRight, MessageSquare, UtensilsCrossed, AlertCircle
+  CheckCircle2, ReceiptText, ArrowRight, MessageSquare, 
+  UtensilsCrossed, AlertCircle
 } from "lucide-react";
 import confetti from 'canvas-confetti';
 
@@ -20,26 +21,46 @@ export default function Cart() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Auto-detect table from URL (?table=...) when component mounts
+  const [notes, setNotes] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [placedDetails, setPlacedDetails] = useState(null);
+  const [isSwiped, setIsSwiped] = useState(false);
+  const [dragConstraints, setDragConstraints] = useState(0);
+  const [tableError, setTableError] = useState("");
+
+  const containerRef = useRef(null);
+  const x = useMotionValue(0);
+  const textOpacity = useTransform(x, [0, 150], [0.4, 0]);
+
+  // Auto-detect & update table from URL
   useEffect(() => {
     const urlTable = searchParams.get("table");
-    if (urlTable && urlTable.trim() !== "") {
-      const cleanTable = urlTable.trim().replace(/^0+/, '') || "1";
-      setTable(cleanTable);
+    if (urlTable?.trim()) {
+      const clean = urlTable.trim().replace(/^0+/, '') || "";
+      if (clean !== table) {
+        setTable(clean);
+        setTableError("");
+      }
     }
-  }, [searchParams, setTable]);
+  }, [searchParams, table, setTable]);
 
-  // GST calculations
-  const cgst = totalAmount * 0.025; // 2.5%
-  const sgst = totalAmount * 0.025; // 2.5%
+  useEffect(() => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      setDragConstraints(containerWidth - 64 - 16);
+    }
+  }, [cart]);
+
+  // GST
+  const cgst = totalAmount * 0.025;
+  const sgst = totalAmount * 0.025;
   const grandTotal = totalAmount + cgst + sgst;
 
-  // Sound effects
   const playSynthSound = (type) => {
+    // your existing sound function...
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       const ctx = new AudioContext();
-      
       const createTone = (freq, type, start, duration, vol) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -63,35 +84,15 @@ export default function Cart() {
         createTone(1046.50, 'triangle', 0.15, 0.4, 0.05); 
       }
     } catch (e) {
-      console.log("Audio play blocked");
+      console.log("Audio blocked");
     }
   };
-
-  // States
-  const [notes, setNotes] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [placedDetails, setPlacedDetails] = useState(null);
-  const [isSwiped, setIsSwiped] = useState(false);
-  const [dragConstraints, setDragConstraints] = useState(0);
-  const [tableError, setTableError] = useState("");
-
-  const containerRef = useRef(null);
-  const x = useMotionValue(0);
-  const textOpacity = useTransform(x, [0, 150], [0.4, 0]);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      setDragConstraints(containerWidth - 64 - 16);
-    }
-  }, [cart]);
 
   const placeOrder = () => {
     if (!table?.trim()) {
       setTableError("Please enter your table number");
       return;
     }
-
     if (cart.length === 0) return;
 
     setTableError("");
@@ -114,14 +115,19 @@ export default function Cart() {
     setPlacedDetails({ orderId, table, total: grandTotal });
     
     setTimeout(() => {
-        clearCart();
-        setShowSuccess(true);
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.7 },
-          colors: ['#10b981', '#fb923c', '#ffffff']
-        });
+      clearCart();
+      setShowSuccess(true);
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.7 },
+        colors: ['#10b981', '#fb923c', '#ffffff']
+      });
+
+      // IMPORTANT: Redirect with table parameter
+      setTimeout(() => {
+        navigate(`/order-summary?table=${table}`);
+      }, 2200);
     }, 300);
   };
 
@@ -150,13 +156,13 @@ export default function Cart() {
       <main className="flex-1 max-w-3xl mx-auto w-full px-6 pt-8 pb-72">
         <AnimatePresence mode="wait">
           {showSuccess ? (
-            <SuccessView key="success" details={placedDetails} navigate={navigate} />
+            <SuccessView key="success" details={placedDetails} navigate={navigate} table={table} />
           ) : cart.length === 0 ? (
             <EmptyView key="empty" table={table} />
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
               
-              {/* Table selection block with auto-detect + manual edit */}
+              {/* Table selection - kept your original beautiful style */}
               <div className="bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-xl">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
@@ -200,7 +206,7 @@ export default function Cart() {
                 </div>
               </div>
 
-              {/* Order items */}
+              {/* Rest of your UI - Order items, Notes, Bill - unchanged */}
               <div className="space-y-4">
                 <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2">Order Summary</h2>
                 {cart.map((item) => (
@@ -224,7 +230,6 @@ export default function Cart() {
                 ))}
               </div>
 
-              {/* Kitchen Notes */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 px-2 text-slate-400">
                     <MessageSquare size={14} />
@@ -238,7 +243,6 @@ export default function Cart() {
                 />
               </div>
 
-              {/* Bill Breakdown */}
               <div className="bg-white border border-dashed border-slate-200 rounded-[2rem] p-6 space-y-3">
                 <div className="flex justify-between text-xs font-bold text-slate-500 uppercase">
                   <span>Subtotal</span>
@@ -268,7 +272,7 @@ export default function Cart() {
             <div 
               ref={containerRef}
               className={`relative h-20 p-2 rounded-[2.5rem] flex items-center transition-all duration-500 shadow-2xl overflow-hidden ${
-                table && table.trim() 
+                table?.trim() 
                   ? 'bg-slate-900' 
                   : 'bg-slate-100 grayscale pointer-events-none'
               }`}
@@ -305,7 +309,7 @@ export default function Cart() {
   );
 }
 
-const SuccessView = ({ details, navigate }) => (
+const SuccessView = ({ details, navigate, table }) => (
   <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-12">
     <div className="relative w-32 h-32 mx-auto mb-8">
         <div className="absolute inset-0 bg-emerald-500/20 rounded-[3rem] animate-pulse" />
@@ -315,11 +319,12 @@ const SuccessView = ({ details, navigate }) => (
     </div>
     <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Order Placed!</h2>
     <p className="text-slate-400 text-sm mt-4 mb-10 px-10">
+      Table: <strong>{details.table}</strong><br/>
       Total Bill: <span className="text-slate-900 font-black">₹{details.total.toLocaleString()}</span> (Incl. GST)
     </p>
     <div className="space-y-4 max-w-xs mx-auto">
         <button 
-          onClick={() => navigate("/order-summary")} 
+          onClick={() => navigate(`/order-summary?table=${table}`)} 
           className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all"
         >
             Track Status <ReceiptText size={18} />
@@ -341,4 +346,4 @@ const EmptyView = ({ table }) => (
       Back to Menu
     </Link>
   </div>
-);  
+);

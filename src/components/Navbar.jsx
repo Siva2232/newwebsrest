@@ -1,10 +1,20 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Utensils, ShoppingCart, Receipt, ChefHat, Sparkles } from "lucide-react";
+import { Utensils, ShoppingCart, Receipt, ChefHat } from "lucide-react";
 
 export default function Navbar({ title }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // Get current table from URL (most reliable source)
+  const currentTable = searchParams.get("table")?.trim();
+
+  // Build link with preserved table param if it exists
+  const getLinkWithTable = (path) => {
+    if (!currentTable) return path;
+    return `${path}?table=${currentTable}`;
+  };
 
   const links = [
     { path: "/menu", label: "Menu", icon: Utensils },
@@ -12,11 +22,13 @@ export default function Navbar({ title }) {
     { path: "/order-summary", label: "Orders", icon: Receipt },
   ];
 
-  const isActive = (path) => location.pathname.startsWith(path);
+  const isActive = (path) => {
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <>
-      {/* --- DESKTOP NAVBAR (Unchanged) --- */}
+      {/* Desktop Navbar */}
       <nav className="hidden md:block sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-slate-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-8 py-3">
           <div className="flex items-center justify-between">
@@ -24,7 +36,7 @@ export default function Navbar({ title }) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3 group cursor-pointer"
-              onClick={() => navigate("/menu")}
+              onClick={() => navigate(getLinkWithTable("/menu"))}
             >
               <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
                 <ChefHat className="w-6 h-6 text-white" strokeWidth={2.5} />
@@ -44,13 +56,15 @@ export default function Navbar({ title }) {
                 return (
                   <button
                     key={link.path}
-                    onClick={() => navigate(link.path)}
+                    onClick={() => navigate(getLinkWithTable(link.path))}
                     className={`relative px-6 py-2.5 rounded-[1.2rem] flex items-center gap-2 transition-all duration-300 ${
                       active ? "text-white" : "text-slate-500 hover:text-slate-900"
                     }`}
                   >
                     <Icon size={18} strokeWidth={active ? 2.5 : 2} className="relative z-10" />
-                    <span className="text-sm font-black uppercase tracking-widest relative z-10">{link.label}</span>
+                    <span className="text-sm font-black uppercase tracking-widest relative z-10">
+                      {link.label}
+                    </span>
                     {active && (
                       <motion.div
                         layoutId="activeTab"
@@ -66,20 +80,22 @@ export default function Navbar({ title }) {
         </div>
       </nav>
 
-      {/* --- MOBILE TOP BAR --- */}
+      {/* Mobile Top Bar */}
       <div className="md:hidden sticky top-0 z-50 backdrop-blur-lg bg-white/80 border-b border-slate-100 flex items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-3" onClick={() => navigate("/menu")}>
+        <div className="flex items-center gap-3" onClick={() => navigate(getLinkWithTable("/menu"))}>
           <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-md">
             <ChefHat className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-lg font-black text-slate-900 tracking-tighter uppercase">{title || "MY CAFE"}</h1>
+          <h1 className="text-lg font-black text-slate-900 tracking-tighter uppercase">
+            {title || "MY CAFE"}
+          </h1>
         </div>
         <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
         </div>
       </div>
 
-      {/* --- MOBILE BOTTOM NAVIGATION (TOUCHING BOTTOM) --- */}
+      {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-white border-t border-slate-100 pb-safe">
         <div className="flex items-center justify-around h-20 px-4">
           {links.map((link) => {
@@ -89,24 +105,24 @@ export default function Navbar({ title }) {
             return (
               <button
                 key={link.path}
-                onClick={() => navigate(link.path)}
+                onClick={() => navigate(getLinkWithTable(link.path))}
                 className="relative flex flex-col items-center justify-center w-full h-full"
               >
-                <div className={`relative z-10 flex flex-col items-center transition-all duration-300 ${
-                  active ? "text-slate-900 scale-110" : "text-slate-400"
-                }`}>
-                  <Icon 
-                    size={24} 
-                    strokeWidth={active ? 2.5 : 2} 
-                  />
-                  <span className={`text-[10px] font-black uppercase tracking-widest mt-1 transition-opacity ${
-                    active ? "opacity-100" : "opacity-0"
-                  }`}>
+                <div
+                  className={`relative z-10 flex flex-col items-center transition-all duration-300 ${
+                    active ? "text-slate-900 scale-110" : "text-slate-400"
+                  }`}
+                >
+                  <Icon size={24} strokeWidth={active ? 2.5 : 2} />
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-widest mt-1 transition-opacity ${
+                      active ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
                     {link.label}
                   </span>
                 </div>
 
-                {/* Smooth Background Indicator */}
                 {active && (
                   <motion.div
                     layoutId="mobileActiveBG"
@@ -114,8 +130,7 @@ export default function Navbar({ title }) {
                     transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                   />
                 )}
-                
-                {/* Top Active Bar Accent */}
+
                 {active && (
                   <motion.div
                     layoutId="topBar"
@@ -128,7 +143,6 @@ export default function Navbar({ title }) {
         </div>
       </nav>
 
-      {/* Space at the end of the page so content isn't hidden by the nav */}
     </>
   );
 }

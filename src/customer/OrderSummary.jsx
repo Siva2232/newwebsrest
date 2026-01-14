@@ -1,9 +1,9 @@
 import { useOrders } from "../context/OrderContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import StatusBadge from "../components/StatusBadge";
 import OrderProgress from "../components/OrderProgress";
 import { format } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { 
@@ -13,25 +13,35 @@ import {
   Receipt, 
   Sparkles, 
   ArrowRight,
-  BellRing
+  BellRing,
+  AlertCircle
 } from "lucide-react";
 
 export default function OrderSummary() {
   const { orders } = useOrders();
   const navigate = useNavigate();
-  
-  // Reference for the Cheering Sound
-  const cheerSoundRef = useRef(new Audio("https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3"));
+  const [searchParams] = useSearchParams();
 
-  const lastOrderId = localStorage.getItem("lastOrderId");
-  const order = orders.find((o) => o.id === lastOrderId) || orders[orders.length - 1];
+  // Get current table from URL
+  const currentTable = searchParams.get("table")?.trim()?.replace(/^0+/, "") || null;
+
+  // Find orders only for current table
+  const tableOrders = currentTable 
+    ? orders.filter(o => o.table === currentTable)
+    : [];
+
+  // Get the most recent order for this table
+  const order = tableOrders.length > 0 
+    ? tableOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+    : null;
+
+  // Cheering sound reference
+  const cheerSoundRef = useRef(new Audio("https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3"));
 
   useEffect(() => {
     if (order?.status === "Served") {
-      // 1. Play Clapping/Cheering Sound
       cheerSoundRef.current.play().catch(err => console.log("Interaction needed for sound"));
 
-      // 2. Confetti Explosion
       const duration = 3 * 1000;
       const end = Date.now() + duration;
 
@@ -68,13 +78,27 @@ export default function OrderSummary() {
         >
           <Receipt size={40} className="text-slate-300" />
         </motion.div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-3">NO ACTIVE ORDER</h2>
-        <p className="text-slate-400 text-sm mb-10 leading-relaxed max-w-[260px]">
-          We couldn't find your receipt. This happens if the session expired or no order was placed.
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-3">
+          NO ACTIVE ORDER
+        </h2>
+        <p className="text-slate-400 text-sm mb-8 leading-relaxed max-w-[300px]">
+          {currentTable 
+            ? `We couldn't find any recent orders for Table ${currentTable}.`
+            : "No table selected or no recent orders found."}
         </p>
-        <Link to="/menu" className="w-full max-w-[200px] bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg active:scale-95 transition-all">
-          Browse Menu
-        </Link>
+        <div className="flex flex-col gap-4 w-full max-w-xs">
+          <Link 
+            to={`/menu${currentTable ? `?table=${currentTable}` : ""}`}
+            className="bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg active:scale-95 transition-all"
+          >
+            Browse Menu
+          </Link>
+          {!currentTable && (
+            <p className="text-slate-500 text-xs">
+              Scan the QR code on your table to continue
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -89,11 +113,11 @@ export default function OrderSummary() {
       className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans"
       onClick={() => cheerSoundRef.current.load()} // Unlocks audio on first user tap
     >
-      {/* --- PREMIUM GLASS NAVBAR --- */}
+      {/* HEADER */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <button 
-            onClick={() => navigate("/menu")} 
+            onClick={() => navigate(`/menu${currentTable ? `?table=${currentTable}` : ""}`)} 
             className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ChevronLeft size={22} className="text-slate-900" />
@@ -231,7 +255,7 @@ export default function OrderSummary() {
         </p>
       </main>
 
-      {/* --- FLOATING BOTTOM ACTION BAR --- */}
+      {/* FLOATING BOTTOM ACTION BAR */}
       <div className="fixed bottom-0 inset-x-0 p-6 z-50 mb-19 lg:mb-0 lg:relative lg:p-0">
         <div className="max-w-md mx-auto">
           <motion.div 
@@ -241,7 +265,7 @@ export default function OrderSummary() {
           >
             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 mt-25"></div>
             <Link 
-              to={`/menu?table=${order.table}`} 
+              to={`/menu${order.table ? `?table=${order.table}` : ""}`} 
               className="relative flex items-center justify-center gap-3 w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl transition-all"
             >
               <RotateCcw size={16} className="group-hover:rotate-180 transition-transform duration-700" />

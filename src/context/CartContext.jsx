@@ -1,10 +1,51 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const CartContext = createContext();
 
+const getCartKey = (table) => `cart_${table?.trim() || 'guest'}`;
+
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]);
-  const [table, setTable] = useState("");
+  const [table, setTableState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTable = params.get("table")?.trim()?.replace(/^0+/, "");
+    return urlTable || localStorage.getItem("lastUsedTable") || "";
+  });
+
+  const [cart, setCart] = useState(() => {
+    if (!table) return [];
+    try {
+      return JSON.parse(localStorage.getItem(getCartKey(table)) || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    if (table?.trim()) {
+      localStorage.setItem(getCartKey(table), JSON.stringify(cart));
+      localStorage.setItem("lastUsedTable", table);
+    }
+  }, [cart, table]);
+
+  useEffect(() => {
+    if (!table?.trim()) {
+      setCart([]);
+      return;
+    }
+    try {
+      const saved = localStorage.getItem(getCartKey(table));
+      setCart(saved ? JSON.parse(saved) : []);
+    } catch {
+      setCart([]);
+    }
+  }, [table]);
+
+  const setTable = (newTable) => {
+    const clean = newTable?.trim()?.replace(/[^0-9]/g, "") || "";
+    if (clean !== table) {
+      setTableState(clean);
+    }
+  };
 
   const addToCart = (product) => {
     setCart((prev) => {
@@ -18,18 +59,13 @@ export const CartProvider = ({ children }) => {
     });
   };
 
-  // NEW: updateQuantity function for + and - buttons
   const updateQuantity = (id, newQty) => {
     if (newQty < 1) {
-      // If quantity goes to 0 or below, remove the item completely
       removeFromCart(id);
       return;
     }
-
     setCart((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, qty: newQty } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, qty: newQty } : item))
     );
   };
 
@@ -38,8 +74,10 @@ export const CartProvider = ({ children }) => {
   };
 
   const clearCart = () => {
+    if (table?.trim()) {
+      localStorage.removeItem(getCartKey(table));
+    }
     setCart([]);
-    setTable("");
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -49,12 +87,13 @@ export const CartProvider = ({ children }) => {
       value={{
         cart,
         addToCart,
-        updateQuantity,     // ← NEW: now available in components
+        updateQuantity,
         removeFromCart,
         clearCart,
         totalAmount,
         table,
         setTable,
+        isTableSelected: !!table?.trim(),
       }}
     >
       {children}
