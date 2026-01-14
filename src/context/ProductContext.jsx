@@ -25,111 +25,142 @@ const MOCK_PRODUCTS = [
   { id: "PROD-022", name: "Falooda", price: 130, type: "veg", description: "Chilled rose-flavored milk drink with vermicelli and basil seeds", category: "Beverages", image: "https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80", available: true },
   { id: "PROD-023", name: "Thandai", price: 100, type: "veg", description: "Cooling spiced milk drink with nuts and saffron", category: "Beverages", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80", available: true },
 ];
-const MOCK_CATEGORIES = ["Starters", "Main Courses", "Desserts", "Beverages"];
+const DEFAULT_CATEGORIES = ["Starters", "Main Courses", "Desserts", "Beverages"];
 
-const getProducts = () => {
-  let stored = JSON.parse(localStorage.getItem("products")) || [];
-  if (stored.length === 0) {
+const initializeProducts = () => {
+  const stored = localStorage.getItem("products");
+  if (!stored) {
     localStorage.setItem("products", JSON.stringify(MOCK_PRODUCTS));
     return MOCK_PRODUCTS;
   }
-  return stored;
+  try {
+    return JSON.parse(stored);
+  } catch {
+    localStorage.setItem("products", JSON.stringify(MOCK_PRODUCTS));
+    return MOCK_PRODUCTS;
+  }
 };
 
-const setProductsToStorage = (data) => {
-  localStorage.setItem("products", JSON.stringify(data));
-  window.dispatchEvent(new Event("storage"));
-};
-
-// --- HELPER TO SAVE CATEGORIES ---
-const setCategoriesToStorage = (data) => {
-  localStorage.setItem("categories", JSON.stringify(data));
-  window.dispatchEvent(new Event("storage"));
-};
-
-const getCategories = () => {
-  const stored = JSON.parse(localStorage.getItem("categories")) || [];
-  // Merge stored with mocks to ensure defaults always exist
-  let merged = [...new Set([...MOCK_CATEGORIES, ...stored])];
-  return merged;
+const initializeCategories = () => {
+  const stored = localStorage.getItem("categories");
+  if (!stored) {
+    localStorage.setItem("categories", JSON.stringify(DEFAULT_CATEGORIES));
+    return DEFAULT_CATEGORIES;
+  }
+  try {
+    const parsed = JSON.parse(stored);
+    // Always make sure default categories exist
+    const merged = [...new Set([...DEFAULT_CATEGORIES, ...parsed])];
+    return merged.length > 0 ? merged : DEFAULT_CATEGORIES;
+  } catch {
+    localStorage.setItem("categories", JSON.stringify(DEFAULT_CATEGORIES));
+    return DEFAULT_CATEGORIES;
+  }
 };
 
 const ProductContext = createContext();
 
 export const ProductProvider = ({ children }) => {
-  const [products, setProducts] = useState(getProducts());
-  const [categories, setCategories] = useState(getCategories());
+  const [products, setProducts] = useState(() => initializeProducts());
+  const [categories, setCategories] = useState(() => initializeCategories());
 
+  // Ordered categories with preferred order
   const orderedCategories = useMemo(() => {
-    const preferredOrder = ["Starters", "Main Courses", "Desserts", "Beverages"];
-    const preferred = preferredOrder.filter((c) => categories.includes(c));
-    const others = categories.filter((c) => !preferredOrder.includes(c)).sort();
-    return [...preferred, ...others];
+    const preferredOrder = ["Starters", "Main Courses", "Desserts", "Beverages", "Others"];
+    const sorted = [...categories].sort((a, b) => {
+      const ia = preferredOrder.indexOf(a);
+      const ib = preferredOrder.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+    return sorted;
   }, [categories]);
 
+  // Sync when localStorage changes (from other tabs/windows)
   useEffect(() => {
-    const sync = () => {
-      setProducts(getProducts());
-      setCategories(getCategories());
+    const handleStorageChange = (e) => {
+      if (e.key === "products") {
+        setProducts(initializeProducts());
+      }
+      if (e.key === "categories") {
+        setCategories(initializeCategories());
+      }
     };
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
+
+  // Helper functions
+  const saveProducts = (newProducts) => {
+    setProducts(newProducts);
+    localStorage.setItem("products", JSON.stringify(newProducts));
+  };
+
+  const saveCategories = (newCategories) => {
+    setCategories(newCategories);
+    localStorage.setItem("categories", JSON.stringify(newCategories));
+  };
 
   const addProduct = (product) => {
     const newProduct = {
       ...product,
-      id: `PROD-${Date.now()}`,
-      available: true
+      id: `PROD-${Date.now().toString(36)}`,
+      available: true,
     };
     const updated = [...products, newProduct];
-    setProducts(updated);
-    setProductsToStorage(updated);
+    saveProducts(updated);
   };
 
-  // --- NEW: ADD CATEGORY FUNCTION ---
   const addCategory = (categoryName) => {
-    if (!categories.includes(categoryName)) {
-      const updated = [...categories, categoryName];
-      setCategories(updated);
-      setCategoriesToStorage(updated); // Saves to LocalStorage
-    }
+    const trimmed = categoryName?.trim();
+    if (!trimmed || categories.includes(trimmed)) return;
+    
+    const updated = [...categories, trimmed];
+    saveCategories(updated);
   };
 
-  const updateProduct = (id, data) => {
-    const updated = products.map((p) => (p.id === id ? { ...p, ...data } : p));
-    setProducts(updated);
-    setProductsToStorage(updated);
+  const updateProduct = (id, updates) => {
+    const updated = products.map(p => p.id === id ? { ...p, ...updates } : p);
+    saveProducts(updated);
   };
 
   const deleteProduct = (id) => {
-    const updated = products.filter((p) => p.id !== id);
-    setProducts(updated);
-    setProductsToStorage(updated);
+    const updated = products.filter(p => p.id !== id);
+    saveProducts(updated);
   };
 
   const toggleAvailability = (id) => {
-    const updated = products.map((p) => (p.id === id ? { ...p, available: !p.available } : p));
-    setProducts(updated);
-    setProductsToStorage(updated);
+    const updated = products.map(p =>
+      p.id === id ? { ...p, available: !p.available } : p
+    );
+    saveProducts(updated);
+  };
+
+  const value = {
+    products,
+    categories,
+    orderedCategories,
+    addProduct,
+    addCategory,
+    updateProduct,
+    deleteProduct,
+    toggleAvailability,
   };
 
   return (
-    <ProductContext.Provider 
-      value={{ 
-        products, 
-        categories, 
-        orderedCategories, 
-        addProduct, 
-        addCategory, // ✅ WAS MISSING: Now exported to components
-        updateProduct, 
-        deleteProduct, 
-        toggleAvailability 
-      }}
-    >
+    <ProductContext.Provider value={value}>
       {children}
     </ProductContext.Provider>
   );
 };
 
-export const useProducts = () => useContext(ProductContext);
+export const useProducts = () => {
+  const context = useContext(ProductContext);
+  if (!context) {
+    throw new Error("useProducts must be used within ProductProvider");
+  }
+  return context;
+};

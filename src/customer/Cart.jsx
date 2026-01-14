@@ -1,12 +1,12 @@
 import { useCart } from "../context/CartContext";
 import { useOrders } from "../context/OrderContext";
 import { generateId } from "../utils/generateId";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { 
   ShoppingBag, Trash2, Plus, Minus, ChevronLeft, 
-  CheckCircle2, ReceiptText, ArrowRight, MessageSquare, UtensilsCrossed
+  CheckCircle2, ReceiptText, ArrowRight, MessageSquare, UtensilsCrossed, AlertCircle
 } from "lucide-react";
 import confetti from 'canvas-confetti';
 
@@ -18,13 +18,23 @@ export default function Cart() {
 
   const { addOrder } = useOrders();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // --- GST CALCULATIONS ---
+  // Auto-detect table from URL (?table=...) when component mounts
+  useEffect(() => {
+    const urlTable = searchParams.get("table");
+    if (urlTable && urlTable.trim() !== "") {
+      const cleanTable = urlTable.trim().replace(/^0+/, '') || "1";
+      setTable(cleanTable);
+    }
+  }, [searchParams, setTable]);
+
+  // GST calculations
   const cgst = totalAmount * 0.025; // 2.5%
   const sgst = totalAmount * 0.025; // 2.5%
   const grandTotal = totalAmount + cgst + sgst;
 
-  // --- PREMIUM SYNTHETIC SOUND ENGINE ---
+  // Sound effects
   const playSynthSound = (type) => {
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -57,12 +67,13 @@ export default function Cart() {
     }
   };
 
-  // State Management
+  // States
   const [notes, setNotes] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [placedDetails, setPlacedDetails] = useState(null);
   const [isSwiped, setIsSwiped] = useState(false);
   const [dragConstraints, setDragConstraints] = useState(0);
+  const [tableError, setTableError] = useState("");
 
   const containerRef = useRef(null);
   const x = useMotionValue(0);
@@ -76,8 +87,14 @@ export default function Cart() {
   }, [cart]);
 
   const placeOrder = () => {
-    if (!table || cart.length === 0) return;
-    
+    if (!table?.trim()) {
+      setTableError("Please enter your table number");
+      return;
+    }
+
+    if (cart.length === 0) return;
+
+    setTableError("");
     playSynthSound('success');
 
     const orderId = generateId("ORD");
@@ -139,27 +156,51 @@ export default function Cart() {
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
               
-              <div className="bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-xl flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                    <UtensilsCrossed size={20} className="text-orange-400" />
+              {/* Table selection block with auto-detect + manual edit */}
+              <div className="bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-xl">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                      <UtensilsCrossed size={20} className="text-orange-400" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">
+                        Serving At
+                      </p>
+                      <p className="text-lg font-black uppercase italic">
+                        Table {table || '??'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Serving At</p>
-                    <p className="text-lg font-black uppercase italic">Table {table || '??'}</p>
+
+                  <div className="relative flex flex-col items-end">
+                    <input 
+                      type="text"
+                      value={table}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        setTable(val);
+                        if (val.trim()) setTableError("");
+                      }}
+                      placeholder="?"
+                      maxLength={3}
+                      className={`w-20 bg-white/10 px-4 py-2.5 rounded-xl text-center font-black text-lg outline-none border-2 transition-all ${
+                        tableError 
+                          ? "border-rose-500 focus:border-rose-500" 
+                          : "border-white/20 focus:border-orange-500"
+                      }`}
+                    />
+                    {tableError && (
+                      <div className="mt-2 text-rose-400 text-[11px] font-medium flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {tableError}
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="bg-white/10 px-4 py-2 rounded-2xl border border-white/5 flex items-center gap-3">
-                  <span className="text-[10px] font-black text-orange-400">EDIT</span>
-                  <input 
-                    type="number" 
-                    value={table || ""} 
-                    onChange={(e) => setTable(e.target.value)}
-                    className="w-8 bg-transparent font-black text-center outline-none border-b border-orange-400/50"
-                  />
                 </div>
               </div>
 
+              {/* Order items */}
               <div className="space-y-4">
                 <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2">Order Summary</h2>
                 {cart.map((item) => (
@@ -183,6 +224,7 @@ export default function Cart() {
                 ))}
               </div>
 
+              {/* Kitchen Notes */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 px-2 text-slate-400">
                     <MessageSquare size={14} />
@@ -196,7 +238,7 @@ export default function Cart() {
                 />
               </div>
 
-              {/* Bill Breakdown Section */}
+              {/* Bill Breakdown */}
               <div className="bg-white border border-dashed border-slate-200 rounded-[2rem] p-6 space-y-3">
                 <div className="flex justify-between text-xs font-bold text-slate-500 uppercase">
                   <span>Subtotal</span>
@@ -226,7 +268,9 @@ export default function Cart() {
             <div 
               ref={containerRef}
               className={`relative h-20 p-2 rounded-[2.5rem] flex items-center transition-all duration-500 shadow-2xl overflow-hidden ${
-                table ? 'bg-slate-900' : 'bg-slate-100 grayscale pointer-events-none'
+                table && table.trim() 
+                  ? 'bg-slate-900' 
+                  : 'bg-slate-100 grayscale pointer-events-none'
               }`}
             >
               <motion.div style={{ opacity: textOpacity }} className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -270,9 +314,14 @@ const SuccessView = ({ details, navigate }) => (
         </div>
     </div>
     <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Order Placed!</h2>
-    <p className="text-slate-400 text-sm mt-4 mb-10 px-10">Total Bill: <span className="text-slate-900 font-black">₹{details.total.toLocaleString()}</span> (Incl. GST)</p>
+    <p className="text-slate-400 text-sm mt-4 mb-10 px-10">
+      Total Bill: <span className="text-slate-900 font-black">₹{details.total.toLocaleString()}</span> (Incl. GST)
+    </p>
     <div className="space-y-4 max-w-xs mx-auto">
-        <button onClick={() => navigate("/order-summary")} className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all">
+        <button 
+          onClick={() => navigate("/order-summary")} 
+          className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all"
+        >
             Track Status <ReceiptText size={18} />
         </button>
     </div>
@@ -285,8 +334,11 @@ const EmptyView = ({ table }) => (
         <ShoppingBag size={40} className="text-slate-200" />
     </div>
     <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Cart is empty</h3>
-    <Link to={`/menu?table=${table}`} className="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg mt-6">
+    <Link 
+      to={`/menu${table ? `?table=${table}` : ""}`} 
+      className="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg mt-6"
+    >
       Back to Menu
     </Link>
   </div>
-);
+);  
