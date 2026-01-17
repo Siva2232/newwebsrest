@@ -16,7 +16,7 @@ import Tables from "../admin/Tables";
 import AddProduct from "../admin/AddProduct";
 import OfferPanel from "../admin/OfferPanel";
 import BannerPanel from "../admin/BannerPanel";
-
+import CustomerSupport from "../admin/CustomerSupport";
 /* Customer Pages */
 import Menu from "../customer/Menu";
 import Cart from "../customer/Cart";
@@ -62,6 +62,7 @@ export default function AppRoutes() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="customer" element={<CustomerSupport />} />
           <Route path="products" element={<Products />} />
           <Route path="products/add" element={<AddProduct />} />
           <Route path="orders" element={<Orders />} />
