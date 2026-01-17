@@ -32,16 +32,20 @@ export default function Menu() {
   const [tableError, setTableError] = useState("");
 
   const sectionRefs = useRef({});
-  const [showLoader, setShowLoader] = useState(true);
+  const [showLoader, setShowLoader] = useState(() => {
+    // Only show loader if not seen before
+    return !localStorage.getItem("hasSeenMenuLoader");
+  });
 
-  // Show loader on first load only
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowLoader(false);
-    }, 1500); // Show for 1.5 seconds
-
-    return () => clearTimeout(timer);
-  }, []);
+    if (showLoader) {
+      const timer = setTimeout(() => {
+        setShowLoader(false);
+        localStorage.setItem("hasSeenMenuLoader", "true");
+      }, 1500); // Show for 1.5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [showLoader]);
 
   // Automatic table from QR code
   useEffect(() => {
