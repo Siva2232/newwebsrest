@@ -263,7 +263,7 @@ export default function Cart() {
                 </div>
                 <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
                   <span className="text-xs font-black text-slate-900 uppercase">Grand Total</span>
-                  <span className="text-lg font-black text-slate-900">₹{grandTotal.toLocaleString()}</span>
+                  <span className="text-lg font-black text-slate-900 ">₹{grandTotal.toLocaleString()}</span>
                 </div>
               </div>
             </motion.div>

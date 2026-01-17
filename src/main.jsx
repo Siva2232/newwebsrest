@@ -8,10 +8,12 @@ import "./index.css";
 import { ProductProvider } from "./context/ProductContext";
 import { OrderProvider } from "./context/OrderContext";
 import { CartProvider } from "./context/CartContext";
+import { SalesProvider } from "./context/SalesContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
+    <SalesProvider>
       <ProductProvider>
         <OrderProvider>
           <CartProvider>
@@ -19,6 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           </CartProvider>
         </OrderProvider>
       </ProductProvider>
+      </SalesProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
