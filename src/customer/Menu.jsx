@@ -1,4 +1,5 @@
 import { useCart } from "../context/CartContext";
+import { useProducts } from "../context/ProductContext";
 import ProductCard from "../components/ProductCard";
 import RestaurantLoader from "../components/RestaurantLoader";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
@@ -16,43 +17,11 @@ import {
   Check,
 } from "lucide-react";
 
-// ── TEMPORARY MOCK DATA (for development / when context is not providing data) ──
-const MOCK_PRODUCTS = [
-  { id: "PROD-001", name: "Chicken Biryani", price: 220, type: "non-veg", description: "Aromatic & spicy rice dish with tender chicken", category: "Main Courses", image: "https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-002", name: "Paneer Butter Masala", price: 180, type: "veg", description: "Creamy & rich cottage cheese curry", category: "Main Courses", image: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-003", name: "Veg Noodles", price: 150, type: "veg", description: "Stir-fried noodles with fresh vegetables", category: "Main Courses", image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-004", name: "Mutton Curry", price: 250, type: "non-veg", description: "Rich & spicy slow-cooked mutton gravy", category: "Main Courses", image: "https://images.unsplash.com/photo-1603894584713-b48dc4294024?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-005", name: "Veg Salad", price: 120, type: "veg", description: "Fresh garden vegetables with light dressing", category: "Starters", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-006", name: "Butter Naan", price: 60, type: "veg", description: "Soft tandoori bread brushed with butter", category: "Main Courses", image: "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-007", name: "Dal Tadka", price: 160, type: "veg", description: "Tempered yellow lentils with aromatic spices", category: "Main Courses", image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-008", name: "Chicken Tikka Masala", price: 240, type: "non-veg", description: "Grilled chicken in creamy tomato sauce", category: "Main Courses", image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-009", name: "Palak Paneer", price: 190, type: "veg", description: "Cottage cheese in creamy spinach gravy", category: "Main Courses", image: "https://images.unsplash.com/photo-1601050638917-3606f50922c2?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-010", name: "Gulab Jamun", price: 90, type: "veg", description: "Soft fried dumplings soaked in rose syrup", category: "Desserts", image: "https://images.unsplash.com/photo-1589119908995-c6837fa14848?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-011", name: "Mango Lassi", price: 80, type: "veg", description: "Refreshing sweet yogurt drink with mango", category: "Beverages", image: "https://images.unsplash.com/photo-1571006682864-74888cdf8d58?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-012", name: "Masala Chai", price: 50, type: "veg", description: "Spiced Indian tea with milk", category: "Beverages", image: "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-013", name: "Fresh Lime Soda", price: 60, type: "veg", description: "Zesty lime soda – sweet or salted", category: "Beverages", image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-014", name: "Vegetable Samosa", price: 80, type: "veg", description: "Crispy pastry filled with spiced potatoes and peas", category: "Starters", image: "https://images.unsplash.com/photo-1601050638917-3606f50922c2?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-015", name: "Chicken 65", price: 180, type: "non-veg", description: "Spicy deep-fried chicken appetizer", category: "Starters", image: "https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-016", name: "Onion Bhaji", price: 100, type: "veg", description: "Crispy fried onion fritters with spices", category: "Starters", image: "https://images.unsplash.com/photo-1601050638917-3606f50922c2?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-017", name: "Butter Chicken", price: 260, type: "non-veg", description: "Tender chicken in rich buttery tomato sauce", category: "Main Courses", image: "https://images.unsplash.com/photo-1603894584713-b48dc4294024?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-018", name: "Lamb Rogan Josh", price: 280, type: "non-veg", description: "Aromatic Kashmiri lamb curry with yogurt and spices", category: "Main Courses", image: "https://images.unsplash.com/photo-1542367592-8849eb950fd8?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-019", name: "Aloo Gobi", price: 140, type: "veg", description: "Spiced potato and cauliflower stir-fry", category: "Main Courses", image: "https://images.unsplash.com/photo-1631209121151-5464195156f4?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-020", name: "Rasmalai", price: 120, type: "veg", description: "Soft cheese patties in creamy milk syrup with pistachios", category: "Desserts", image: "https://images.unsplash.com/photo-1645177623570-5896a7605963?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-021", name: "Jalebi", price: 80, type: "veg", description: "Crispy pretzel-shaped sweets soaked in sugar syrup", category: "Desserts", image: "https://images.unsplash.com/photo-1589119908995-c6837fa14848?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-022", name: "Falooda", price: 130, type: "veg", description: "Chilled rose-flavored milk drink with vermicelli and basil seeds", category: "Beverages", image: "https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80", available: true },
-  { id: "PROD-023", name: "Thandai", price: 100, type: "veg", description: "Cooling spiced milk drink with nuts and saffron", category: "Beverages", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80", available: true },
-];
-
-const MOCK_ORDERED_CATEGORIES = ["Starters", "Main Courses", "Desserts", "Beverages"];
-
 export default function Menu() {
   const { addToCart, removeFromCart, cart = [], table, setTable } = useCart();
+  const { products, orderedCategories } = useProducts();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  // Fallback to mock data if context doesn't provide products/categories
-  const products = MOCK_PRODUCTS; // ← using mock directly for now
-  const orderedCategories = MOCK_ORDERED_CATEGORIES;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [slide, setSlide] = useState(0);
@@ -63,7 +32,16 @@ export default function Menu() {
   const [tableError, setTableError] = useState("");
 
   const sectionRefs = useRef({});
-  const [showLoader, setShowLoader] = useState(false);
+  const [showLoader, setShowLoader] = useState(true);
+
+  // Show loader on first load only
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoader(false);
+    }, 1500); // Show for 1.5 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Automatic table from QR code
   useEffect(() => {
@@ -77,7 +55,6 @@ export default function Menu() {
     }
   }, [searchParams, setTable, table, navigate]);
 
-  // Manual table handlers
   const handleSetManualTable = () => {
     const cleaned = manualTableInput.trim().replace(/[^0-9]/g, "");
     if (!cleaned) {
@@ -97,7 +74,6 @@ export default function Menu() {
     if (e.key === "Enter") handleSetManualTable();
   };
 
-  // Banner carousel logic (your original)
   const [activeSlides, setActiveSlides] = useState([]);
 
   const defaultSlides = [
@@ -144,27 +120,22 @@ export default function Menu() {
 
   const totalItems = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
 
-  const suggestions = useMemo(() => {
-    const trimmed = searchQuery.trim().toLowerCase();
-    if (trimmed.length < 2) return [];
-    return products.filter((p) => (p.name?.toLowerCase() || "").includes(trimmed)).slice(0, 6);
-  }, [products, searchQuery]);
+  const trimmedQuery = searchQuery.trim().toLowerCase();
 
-  useEffect(() => {
-    const hasShown = sessionStorage.getItem("menuLoaderShown");
-    if (!hasShown) {
-      setShowLoader(true);
-      const timer = setTimeout(() => {
-        sessionStorage.setItem("menuLoaderShown", "true");
-        setShowLoader(false);
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  const suggestions = useMemo(() => {
+    if (!trimmedQuery) return [];
+
+    return MOCK_PRODUCTS.filter(product => {
+      const nameLower = product.name.toLowerCase();
+      return nameLower.split(/\s+/).some(word => word.startsWith(trimmedQuery));
+    }).slice(0, 8);
+  }, [trimmedQuery]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-orange-100 selection:text-orange-900">
-      <AnimatePresence>{showLoader && <RestaurantLoader />}</AnimatePresence>
+      <AnimatePresence>
+        {showLoader && <RestaurantLoader />}
+      </AnimatePresence>
 
       {!showLoader && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col flex-1">
@@ -183,14 +154,40 @@ export default function Menu() {
                 </div>
 
                 {table && (
-                  <div
-                    onClick={() => setShowTableModal(true)}
-                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg cursor-pointer hover:bg-emerald-700 transition-colors"
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    <span className="text-xs font-black uppercase tracking-widest">Table {table}</span>
-                  </div>
-                )}
+  <div className="relative group select-none">
+    {/* Subtle soft glow to anchor the element */}
+    <div className="absolute inset-0 bg-emerald-500/10 blur-2xl rounded-full" />
+
+    <div className="relative flex items-center gap-3 bg-white/80 backdrop-blur-md border border-slate-200/60 px-4 py-2 rounded-2xl shadow-sm overflow-hidden">
+      
+      {/* Decorative Gradient Line (Top) */}
+      <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
+
+      {/* The Indicator Icon */}
+      <div className="relative flex items-center justify-center">
+        <div className="w-9 h-9 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center shadow-inner">
+          <TableIcon size={16} className="text-slate-600" />
+        </div>
+        
+        {/* Modern Live Status Dot */}
+        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40"></span>
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border-[1.5px] border-white"></span>
+        </span>
+      </div>
+
+      {/* Text Stack */}
+      <div className="flex flex-col pr-1">
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-tight">
+          Assigned
+        </span>
+        <span className="text-sm font-black text-slate-900 uppercase tracking-tighter">
+          Table {table}
+        </span>
+      </div>
+    </div>
+  </div>
+)}
               </div>
 
               {/* Search Bar */}
@@ -198,6 +195,7 @@ export default function Menu() {
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                   <Search size={18} strokeWidth={2.5} />
                 </div>
+
                 <input
                   type="text"
                   value={searchQuery}
@@ -207,70 +205,132 @@ export default function Menu() {
                   placeholder="What are you craving?"
                   className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-slate-100/50 border-none text-sm font-semibold focus:ring-2 focus:ring-slate-900/10 transition-all placeholder:text-slate-400"
                 />
+
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900">
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors"
+                  >
                     <X size={18} strokeWidth={2.5} />
                   </button>
                 )}
+
                 <AnimatePresence>
-                  {isSearchFocused && suggestions.length > 0 && (
+                  {isSearchFocused && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[60]"
+                      initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[60] max-h-[340px] overflow-y-auto"
                     >
-                      {suggestions.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => { setSearchQuery(p.name); setIsSearchFocused(false); }}
-                          className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-none"
-                        >
-                          <div className="flex items-center gap-3">
-                            <img src={p.image} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                            <div className="text-left">
-                              <p className="text-sm font-bold text-slate-900">{p.name}</p>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase">{p.category}</p>
+                      {suggestions.length > 0 ? (
+                        suggestions.map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => {
+                              setSearchQuery(p.name);
+                              setIsSearchFocused(false);
+                            }}
+                            className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 active:bg-slate-100 transition-colors border-b border-slate-50 last:border-none"
+                          >
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={p.image}
+                                alt={p.name}
+                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                onError={(e) => {
+                                  e.target.src = "https://via.placeholder.com/40?text=🍛";
+                                }}
+                              />
+                              <div className="text-left min-w-0">
+                                <p className="text-sm font-bold text-slate-900 truncate">{p.name}</p>
+                                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wide">
+                                  {p.category}
+                                </p>
+                              </div>
                             </div>
+                            <p className="text-xs font-black text-emerald-600 flex-shrink-0">
+                              ₹{p.price}
+                            </p>
+                          </button>
+                        ))
+                      ) : trimmedQuery ? (
+                        <div className="py-10 px-6 text-center">
+                          <div className="mx-auto w-20 h-20 mb-5 opacity-60">
+                            <svg
+                              viewBox="0 0 100 100"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-full h-full text-slate-300"
+                            >
+                              <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="5" />
+                              <path
+                                d="M35 38 L45 48 L65 28 M32 68 L68 68"
+                                stroke="currentColor"
+                                strokeWidth="6"
+                                strokeLinecap="round"
+                              />
+                            </svg>
                           </div>
-                          <p className="text-xs font-black text-slate-900">₹{p.price}</p>
-                        </button>
-                      ))}
+
+                          <h3 className="text-lg font-bold text-slate-800 mb-2">No matches found</h3>
+                          <p className="text-sm text-slate-500 mb-5">
+                            Try searching for Biryani, Samosa, Paneer, Chai...
+                          </p>
+
+                          <div className="flex flex-wrap justify-center gap-2">
+                            {['Biryani', 'Samosa', 'Paneer', 'Chai'].map((item) => (
+                              <button
+                                key={item}
+                                onClick={() => setSearchQuery(item)}
+                                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-full text-xs font-medium text-slate-700 transition"
+                              >
+                                {item}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-8 px-6 text-center text-slate-400 text-sm italic">
+                          Start typing to discover delicious dishes...
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-            </div>
 
-            {/* Filters & Category Bar */}
-            <div className="border-t border-slate-50 py-3 bg-white/50">
-              <div className="max-w-7xl mx-auto px-4 flex items-center gap-4">
-                <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200 shrink-0">
-                  {['all', 'veg', 'non-veg'].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setFoodTypeFilter(type)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all ${
-                        foodTypeFilter === type ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                      }`}
-                    >
-                      {type === 'veg' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-                      {type === 'non-veg' && <div className="w-1.5 h-1.5 rounded-full bg-red-500" />}
-                      {type === 'all' ? 'All' : type}
-                    </button>
-                  ))}
-                </div>
-                <div className="h-6 w-[1px] bg-slate-200 shrink-0" />
-                <div className="overflow-x-auto no-scrollbar flex gap-2">
-                  {orderedCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => sectionRefs.current[cat]?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                      className="px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-slate-100 bg-white text-slate-500 hover:border-slate-900 hover:text-slate-900 active:scale-95 shadow-sm"
-                    >
-                      {cat}
-                    </button>
-                  ))}
+              {/* Filters & Category Bar */}
+              <div className="border-t border-slate-50 py-3 bg-white/50">
+                <div className="max-w-7xl mx-auto px-4 flex items-center gap-4">
+                  <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200 shrink-0">
+                    {['all', 'veg', 'non-veg'].map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setFoodTypeFilter(type)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all ${
+                          foodTypeFilter === type ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                        }`}
+                      >
+                        {type === 'veg' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                        {type === 'non-veg' && <div className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                        {type === 'all' ? 'All' : type}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="h-6 w-[1px] bg-slate-200 shrink-0" />
+                  <div className="overflow-x-auto no-scrollbar flex gap-2">
+                    {orderedCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => sectionRefs.current[cat]?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                        className="px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-slate-100 bg-white text-slate-500 hover:border-slate-900 hover:text-slate-900 active:scale-95 shadow-sm"
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -421,7 +481,7 @@ export default function Menu() {
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Items Added</p>
-                        <p className="text-sm font-bold leading-none italic">View Selection</p>
+                        <p className="text-sm font-bold leading-none">View Selection</p>
                       </div>
                     </div>
                     <div className="w-[1px] h-8 bg-slate-800" />

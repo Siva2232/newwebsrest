@@ -141,15 +141,20 @@ export default function Cart() {
           </Link>
           <div className="text-center">
             <h1 className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Checkout</h1>
-            <p className="text-sm font-black text-slate-900 uppercase italic leading-none mt-1">Review Items</p>
+            <p className="text-sm font-black text-slate-900 uppercase leading-none mt-1">Review Items</p>
           </div>
-          <div className="w-10 flex justify-end">
-            {cart.length > 0 && (
-              <button onClick={clearCart} className="text-slate-300 hover:text-rose-500 transition-colors">
-                <Trash2 size={20} />
-              </button>
-            )}
-          </div>
+         <div className="flex justify-end">
+      {cart.length > 0 && (
+        <button 
+          onClick={clearCart} 
+          className="flex items-center justify-center h-9 w-9 bg-rose-50 text-rose-500 rounded-full hover:bg-rose-100 active:scale-95 transition-all"
+          aria-label="Clear Cart"
+        >
+          <Trash2 size={18} strokeWidth={2.2} />
+        </button>
+      )}
+    </div>
+
         </div>
       </nav>
 
@@ -173,7 +178,7 @@ export default function Cart() {
                       <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">
                         Serving At
                       </p>
-                      <p className="text-lg font-black uppercase italic">
+                      <p className="text-lg font-black uppercase">
                         Table {table || '??'}
                       </p>
                     </div>
@@ -223,7 +228,7 @@ export default function Cart() {
                           <span className="w-8 text-center text-xs font-black">{item.qty}</span>
                           <button onClick={() => updateQuantity(item.id, item.qty + 1)} className="w-8 h-8 flex items-center justify-center"><Plus size={12}/></button>
                         </div>
-                        <p className="font-black text-slate-900 text-sm italic">₹{(item.price * item.qty).toLocaleString()}</p>
+                        <p className="font-black text-slate-900 text-sm">₹{(item.price * item.qty).toLocaleString()}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -258,7 +263,7 @@ export default function Cart() {
                 </div>
                 <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
                   <span className="text-xs font-black text-slate-900 uppercase">Grand Total</span>
-                  <span className="text-lg font-black text-slate-900 italic">₹{grandTotal.toLocaleString()}</span>
+                  <span className="text-lg font-black text-slate-900">₹{grandTotal.toLocaleString()}</span>
                 </div>
               </div>
             </motion.div>

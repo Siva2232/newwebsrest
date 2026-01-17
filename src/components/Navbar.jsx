@@ -1,16 +1,16 @@
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion } from "framer-motion";
-import { Utensils, ShoppingCart, Receipt, ChefHat } from "lucide-react";
+import { Utensils, ShoppingCart, Receipt, ChefHat, Bell } from "lucide-react";
 
 export default function Navbar({ title }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const [hasUnreadOffer, setHasUnreadOffer] = useState(false);
 
-  // Get current table from URL (most reliable source)
   const currentTable = searchParams.get("table")?.trim();
 
-  // Build link with preserved table param if it exists
   const getLinkWithTable = (path) => {
     if (!currentTable) return path;
     return `${path}?table=${currentTable}`;
@@ -22,8 +22,21 @@ export default function Navbar({ title }) {
     { path: "/order-summary", label: "Orders", icon: Receipt },
   ];
 
-  const isActive = (path) => {
-    return location.pathname.startsWith(path);
+  const isActive = (path) => location.pathname.startsWith(path);
+
+  // Show notification dot when offer is viewed/closed
+  useEffect(() => {
+    const handleOfferViewed = () => {
+      setHasUnreadOffer(true);
+    };
+    window.addEventListener("offerViewed", handleOfferViewed);
+    return () => window.removeEventListener("offerViewed", handleOfferViewed);
+  }, []);
+
+  // When bell is clicked → show offers again + clear notification
+  const handleBellClick = () => {
+    setHasUnreadOffer(false);
+    window.dispatchEvent(new Event("showOfferModal"));
   };
 
   return (
@@ -45,36 +58,50 @@ export default function Navbar({ title }) {
                 <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase leading-none">
                   {title || "MY CAFE"}
                 </h1>
-                <p className="text-[10px] font-bold text-slate-400 tracking-[0.2em] mt-1 italic">PREMIUM DINING</p>
+                <p className="text-[10px] font-bold text-slate-400 tracking-[0.2em] mt-1">PREMIUM DINING</p>
               </div>
             </motion.div>
 
-            <div className="flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-[1.5rem] border border-slate-200/50">
-              {links.map((link) => {
-                const active = isActive(link.path);
-                const Icon = link.icon;
-                return (
-                  <button
-                    key={link.path}
-                    onClick={() => navigate(getLinkWithTable(link.path))}
-                    className={`relative px-6 py-2.5 rounded-[1.2rem] flex items-center gap-2 transition-all duration-300 ${
-                      active ? "text-white" : "text-slate-500 hover:text-slate-900"
-                    }`}
-                  >
-                    <Icon size={18} strokeWidth={active ? 2.5 : 2} className="relative z-10" />
-                    <span className="text-sm font-black uppercase tracking-widest relative z-10">
-                      {link.label}
-                    </span>
-                    {active && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-slate-900 rounded-[1.2rem] shadow-lg"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
+            <div className="flex items-center gap-5">
+              {/* Notification Bell */}
+              <button
+                onClick={handleBellClick}
+                className="relative p-2.5 rounded-full hover:bg-slate-100/80 transition-colors focus:outline-none"
+              >
+                <Bell size={22} className="text-slate-700" strokeWidth={2} />
+                {hasUnreadOffer && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                )}
+              </button>
+
+              {/* Navigation Tabs */}
+              <div className="flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-[1.5rem] border border-slate-200/50">
+                {links.map((link) => {
+                  const active = isActive(link.path);
+                  const Icon = link.icon;
+                  return (
+                    <button
+                      key={link.path}
+                      onClick={() => navigate(getLinkWithTable(link.path))}
+                      className={`relative px-6 py-2.5 rounded-[1.2rem] flex items-center gap-2 transition-all duration-300 ${
+                        active ? "text-white" : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      <Icon size={18} strokeWidth={active ? 2.5 : 2} className="relative z-10" />
+                      <span className="text-sm font-black uppercase tracking-widest relative z-10">
+                        {link.label}
+                      </span>
+                      {active && (
+                        <motion.div
+                          layoutId="activeTab"
+                          className="absolute inset-0 bg-slate-900 rounded-[1.2rem] shadow-lg"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -90,8 +117,22 @@ export default function Navbar({ title }) {
             {title || "MY CAFE"}
           </h1>
         </div>
-        <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+
+        <div className="flex items-center gap-4">
+          {/* Notification Bell - Mobile */}
+          <button
+            onClick={handleBellClick}
+            className="relative p-2 focus:outline-none"
+          >
+            <Bell size={22} className="text-slate-700" />
+            {hasUnreadOffer && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+            )}
+          </button>
+
+          <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          </div>
         </div>
       </div>
 
@@ -142,7 +183,6 @@ export default function Navbar({ title }) {
           })}
         </div>
       </nav>
-
     </>
   );
 }

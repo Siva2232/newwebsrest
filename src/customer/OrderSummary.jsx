@@ -129,7 +129,7 @@ export default function OrderSummary() {
             <p className="text-sm font-bold text-slate-900">Order Summary</p>
           </div>
           <button className="p-2 -mr-2 text-slate-400 hover:text-indigo-600 transition-colors">
-            <BellRing size={20} />
+            {/* <BellRing size={20} /> */}
           </button>
         </div>
       </header>
