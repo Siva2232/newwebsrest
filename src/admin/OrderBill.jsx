@@ -47,7 +47,7 @@ export default function OrderBill() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-20 font-mono">
       {/* Premium Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 no-print">
+      <header className="top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 no-print">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <ChevronLeft size={20} />
