@@ -45,12 +45,12 @@ export default function AdminLayout() {
     { name: "Tables", icon: Table, path: "tables" },
     { name: "Add Banner", icon: ImagePlus, path: "banner" },
     { name: "Add Offers", icon: Sparkles, path: "offers" },
-    {
-      name: "Kitchen Features",
-      icon: Settings,
-      path: "new-feature", // just placeholder - won't be used anyway
-      disabled: true,
-    },
+    // {
+    //   name: "Kitchen Features",
+    //   icon: Settings,
+    //   path: "new-feature", // just placeholder - won't be used anyway
+    //   disabled: true,
+    // },
   ];
 
   // Count out-of-stock products
@@ -129,7 +129,7 @@ const handleClearAllStockAlerts = () => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:sticky top-0 left-0 z-[70] h-screen flex flex-col flex-shrink-0
+          fixed lg:sticky top-0 left-0 z-[70] h-screen flex flex-col
           bg-white border-r border-slate-200 transition-all duration-500 ease-in-out
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           ${isCollapsed ? "lg:w-[90px]" : "w-72"}
