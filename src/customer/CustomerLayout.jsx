@@ -25,11 +25,12 @@ export default function CustomerLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar title="MY CAFE" />
-      
+
       {/* This component now waits 6 seconds internally before showing */}
       <OfferModal offerData={activeOffers} />
 
-      <main className="flex-grow w-full">
+      {/* Make main scrollable, hide scrollbar, add bottom padding for nav */}
+      <main className="flex-grow w-full overflow-y-auto no-scrollbar pb-24">
         <Outlet />
       </main>
     </div>
