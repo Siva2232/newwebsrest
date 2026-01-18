@@ -45,12 +45,12 @@ export default function AdminLayout() {
     { name: "Tables", icon: Table, path: "tables" },
     { name: "Add Banner", icon: ImagePlus, path: "banner" },
     { name: "Add Offers", icon: Sparkles, path: "offers" },
-    // {
-    //   name: "Kitchen Features",
-    //   icon: Settings,
-    //   path: "new-feature", // just placeholder - won't be used anyway
-    //   disabled: true,
-    // },
+    {
+      name: "Kitchen Features",
+      icon: Settings,
+      path: "new-feature", // just placeholder - won't be used anyway
+      disabled: true,
+    },
   ];
 
   // Count out-of-stock products
